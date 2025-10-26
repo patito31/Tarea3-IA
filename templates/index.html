@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Asistente Experto de Calidad del Aire</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h2, h3 { color: #1a5276; }
+        table { border-collapse: collapse; width: 100%; margin-top: 15px; }
+        th, td { border: 1px solid #999; padding: 8px; text-align: center; }
+        th { background-color: #d6eaf8; }
+        .buena { color: green; font-weight: bold; }
+        .moderada, .normal { color: orange; font-weight: bold; }
+        .mala, .alerta { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h2>Asistente de Calidad del Aire</h2>
+    <h3>Ingrese las mediciones:</h3>
+
+    <form method="post">
+        <label>PM2.5 (µg/m³):</label>
+        <input type="number" step="0.1" name="pm2_5" required><br>
+
+        <label>PM10 (µg/m³):</label>
+        <input type="number" step="0.1" name="pm10" required><br>
+
+        <label>NO₂ (ppb):</label>
+        <input type="number" step="0.1" name="no2" required><br>
+
+        <label>CO (ppm):</label>
+        <input type="number" step="0.1" name="co" required><br>
+
+        <label>O₃ (ppb):</label>
+        <input type="number" step="0.1" name="o3" required><br>
+
+        <label>SO₂ (ppb):</label>
+        <input type="number" step="0.1" name="so2" required><br>
+
+        <label>Temperatura (°C):</label>
+        <input type="number" step="0.1" name="temperatura" required><br>
+
+        <label>Humedad relativa (%):</label>
+        <input type="number" step="0.1" name="humedad" required><br>
+
+        <label>Velocidad del viento (m/s):</label>
+        <input type="number" step="0.1" name="v_viento" required><br>
+
+        <label>Evento de biomasa (incendio o quema):</label>
+        <select name="evento_biomasa">
+            <option value="0">No</option>
+            <option value="1">Sí</option>
+        </select><br><br>
+
+        <input type="submit" value="Analizar calidad del aire">
+    </form>
+
+    {% if result_level %}
+        <hr>
+        <h3>Diagnóstico general:
+            <span class="{{ result_level|lower }}">{{ result_level }}</span>
+        </h3>
+
+        <p>• Contaminantes:
+            <span class="{{ nivel_cont|lower }}">{{ nivel_cont }}</span><br>
+           • Condiciones meteorológicas:
+            <span class="{{ nivel_meteo|lower }}">{{ nivel_meteo }}</span><br>
+           • Contexto ambiental:
+            <span class="{{ nivel_ctx|lower }}">{{ nivel_ctx }}</span>
+        </p>
+    {% endif %}
+
+    <hr>
+    <h3>Historial de mediciones</h3>
+    <table>
+        <tr>
+            <th>Fecha</th>
+            <th>PM2.5</th>
+            <th>PM10</th>
+            <th>NO₂</th>
+            <th>CO</th>
+            <th>O₃</th>
+            <th>SO₂</th>
+            <th>Nivel de Calidad</th>
+        </tr>
+        {% for m in measurements %}
+        <tr>
+            <td>{{ m[0] }}</td>
+            <td>{{ m[1] }}</td>
+            <td>{{ m[2] }}</td>
+            <td>{{ m[3] }}</td>
+            <td>{{ m[4] }}</td>
+            <td>{{ m[5] }}</td>
+            <td>{{ m[6] }}</td>
+            <td class="{{ m[7]|lower }}">{{ m[7] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <p><i>Los datos se almacenan automáticamente en la base de datos para seguimiento histórico.</i></p>
+</body>
+</html> 
