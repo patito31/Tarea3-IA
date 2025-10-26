@@ -1,54 +1,94 @@
 from flask import Flask, render_template, request, redirect, url_for
-from database import init_db, sqlite3
-from acquisition_module import acquire_and_save_single_data
-from inference_engine import analyze_and_update 
+
+# inference / acquisition
+from inference_engine import AirExpertEngine, Fact
+from acquisition_module import SensorInput, to_fact_dict
+
+# database helpers (normalizado)
+from database import (
+    init_db,
+    save_measurement,
+    save_condition,
+    save_context,
+    save_full_record,
+    fetch_recent_context,
+)
 
 app = Flask(__name__)
-DB_NAME = 'air_data.db'
 
-# 1. Inicializar la BDD al inicio
+
+def parse_float(v):
+    try:
+        return float(v) if v not in ("", None) else None
+    except (ValueError, TypeError):
+        return None
+
+
+# Inicializar BDD y motor
+engine = AirExpertEngine()
 init_db()
+
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
+    result = None
+
     if request.method == 'POST':
-        # 2. Recepción de datos desde la interfaz (Módulo de Adquisición)
+        # Construir SensorInput desde distintos posibles nombres de campo
+        data = SensorInput(
+            PM2_5_24h=(parse_float(request.form.get('pm25'))
+                       or parse_float(request.form.get('pm2_5'))
+                       or parse_float(request.form.get('pm2_5_24h'))),
+            PM10_24h=(parse_float(request.form.get('pm10'))
+                      or parse_float(request.form.get('pm_10'))),
+            NO2_24h=parse_float(request.form.get('no2')),
+            O3_8h=parse_float(request.form.get('o3')),
+            SO2_24h=parse_float(request.form.get('so2')),
+            CO_24h=parse_float(request.form.get('co')),
+            temp=parse_float(request.form.get('temp')),
+            rh=parse_float(request.form.get('rh')),
+        )
+
+        # Evaluar con motor experto
+        fact = Fact(**to_fact_dict(data))
+        result = engine.evaluate(fact)
+
+        # Guardar todo en una sola llamada (medida + condición + contexto)
+        zona = request.form.get('zona') or None
+        evento = request.form.get('evento_biomasa')
         try:
-            pm2_5 = float(request.form.get('pm2_5'))
-            pm10 = float(request.form.get('pm10'))
-            no2 = float(request.form.get('no2'))
-            co = float(request.form.get('co'))
-            
-            # Guardar la medición inicial en la BDD
-            conn = sqlite3.connect(DB_NAME)
-            cursor = conn.cursor()
-            cursor.execute("""
-                INSERT INTO measurements (pm2_5, pm10, no2, co)
-                VALUES (?, ?, ?, ?)
-            """, (pm2_5, pm10, no2, co))
-            new_id = cursor.lastrowid
-            conn.commit()
-            conn.close()
-
-            # 3. Analizar los datos y actualizar el resultado (Motor de Inferencia)
-            result_level = analyze_and_update(new_id, pm2_5, pm10, no2, co)
-            
-            return redirect(url_for('index'))
-
+            evento_val = int(evento) if evento not in (None, "") else 0
         except ValueError:
-            # Manejar error si la entrada no es un número
-            pass 
+            evento_val = 0
 
-    # 4. Mostrar Resultados (Interfaz)
-    conn = sqlite3.connect(DB_NAME)
-    cursor = conn.cursor()
-    # Obtener las 10 últimas mediciones para mostrar
-    measurements = cursor.execute(
-        "SELECT id, timestamp, pm2_5, pm10, quality_level FROM measurements ORDER BY id DESC LIMIT 10"
-    ).fetchall()
-    conn.close()
-    
-    return render_template('index.html', measurements=measurements)
+        medida = {
+            'pm2_5': data.PM2_5_24h,
+            'pm10': data.PM10_24h,
+            'no2': data.NO2_24h,
+            'co': data.CO_24h,
+            'o3': data.O3_8h,
+            'so2': data.SO2_24h,
+        }
+        condicion = {
+            'temperatura': data.temp,
+            'humedad': data.rh,
+            'v_viento': None,
+        }
+        contexto_extra = {
+            'zona': zona,
+            'hora': None,
+            'evento_biomasa': evento_val,
+            'quality_level': result.label,
+        }
+
+        save_full_record(medida, condicion, contexto_extra)
+
+        return redirect(url_for('index'))
+
+    # Mostrar historial: contexto reciente (incluye join con medidas/condiciones)
+    history = fetch_recent_context(10)
+    return render_template('index.html', result=result, history=history)
+
 
 if __name__ == '__main__':
     app.run(debug=True)

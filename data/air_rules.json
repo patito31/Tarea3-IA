@@ -1,0 +1,29 @@
+{
+  "umbrales_OMS": {
+    "PM2_5_24h": 15,
+    "PM10_24h": 45,
+    "NO2_24h": 25,
+    "O3_8h": 100,
+    "SO2_24h": 40,
+    "CO_24h": 4000
+  },
+  "recomendaciones": {
+    "Buena": [
+      "Puede realizar actividades al aire libre sin restricciones.",
+      "Mantenga ventilación natural en interiores."
+    ],
+    "Moderada": [
+      "Personas sensibles deberían limitar la exposición prolongada.",
+      "Evite quemas o emisiones innecesarias."
+    ],
+    "Riesgo moderado": [
+      "Evite ejercicio intenso al aire libre.",
+      "Grupos sensibles (niños, adultos mayores, asmáticos) deben permanecer en interiores."
+    ],
+    "Riesgo alto": [
+      "Permanezca en interiores con puertas y ventanas cerradas.",
+      "Use mascarilla N95 si debe salir.",
+      "Suspenda actividades físicas al aire libre."
+    ]
+  }
+}
