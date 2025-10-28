@@ -138,6 +138,7 @@
       {# fetch_recent_context devuelve columnas:
          0:id,1:zona,2:hora,3:evento_biomasa,4:quality_level,
          5:pm2_5,6:pm10,7:no2,8:co,9:o3,10:so2,11:temperatura,12:humedad,13:v_viento #}
+      {% set color_map = {'Buena':'green','Moderada':'yellow','Riesgo moderado':'orange','Riesgo alto':'red'} %}
       {% for h in history %}
       <tr>
         <td>{{ h[0] }}</td>
@@ -151,7 +152,15 @@
         <td>{{ h[8] or '—' }}</td>
         <td>{{ h[11] or '—' }}</td>
         <td>{{ h[12] or '—' }}</td>
-        <td>{{ h[4] or '—' }}</td>
+        <td>
+          {% set label = h[4] or '—' %}
+          {% set col = color_map.get(label, '') %}
+          {% if col %}
+            <span class="badge {{ col }}">{{ label }}</span>
+          {% else %}
+            {{ label }}
+          {% endif %}
+        </td>
       </tr>
       {% endfor %}
     </tbody>
