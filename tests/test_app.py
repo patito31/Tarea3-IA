@@ -4,7 +4,6 @@ from inference_engine import InferenceResult
 from unittest.mock import MagicMock, patch
 
 def test_index_get(monkeypatch):
-    # Importar el módulo web
     import app as web
     dummy_rows = [
         (1, "Centro", None, 0, "Buena", 10.0, 20.0, 5.0, 0.5, 30.0, 5.0, 22.0, 40.0, None)

@@ -3,7 +3,6 @@ from typing import List, Optional, Dict, Any
 import json
 from pathlib import Path
 
-# Ruta base de conocimiento
 _RULES_PATH = Path("data/air_rules.json")
 
 @dataclass
@@ -42,7 +41,7 @@ class AirExpertEngine:
         for Cl, Ch, Il, Ih in bp:
             if Cl <= pm25 <= Ch:
                 return round(((Ih - Il) / (Ch - Cl)) * (pm25 - Cl) + Il)
-        return 201  # Si excede máximo, se considera riesgo alto
+        return 201  
 
     def evaluate(self, fact: Fact) -> InferenceResult:
         just = []
@@ -52,7 +51,6 @@ class AirExpertEngine:
         label = "Buena"
         aqi_value = None
 
-        # 1️⃣ Calcular AQI PM2.5 si hay dato
         if fact.PM2_5_24h is not None:
             aqi_value = self._calc_aqi_pm25(fact.PM2_5_24h)
             just.append(f"AQI PM2.5 = {aqi_value} basado en concentración de {fact.PM2_5_24h} µg/m³.")
@@ -66,10 +64,8 @@ class AirExpertEngine:
             else:
                 label, color = "Riesgo alto", "red"
 
-            # Recomendaciones según nivel
             recs.extend(self.rules["recomendaciones"][label])
 
-        # 2️⃣ Revisar gases según umbrales OMS
         for gas, limit in self.rules["umbrales_OMS"].items():
             val = getattr(fact, gas, None)
             if val is not None and val > limit:
@@ -77,7 +73,6 @@ class AirExpertEngine:
                 alerts.append(msg)
                 just.append(msg)
 
-        # 3️⃣ Contexto ambiental extra
         if fact.temp and fact.temp > 30 and fact.PM2_5_24h and fact.PM2_5_24h > 35:
             alerts.append("Condiciones calurosas con alta concentración de partículas.")
             recs.append("Evite actividades al aire libre prolongadas.")

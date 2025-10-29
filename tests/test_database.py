@@ -5,8 +5,8 @@ from unittest.mock import MagicMock, patch
 
 def test_save_and_fetch_roundtrip(tmp_path):
     import database as db
-    importlib.reload(db)                 # recargar limpio
-    db._DB_PATH = tmp_path / "test.db"   # usar BD temporal
+    importlib.reload(db)                
+    db._DB_PATH = tmp_path / "test.db"   
 
     db.init_db()
 
@@ -41,7 +41,6 @@ def test_save_full_record_calls_correct_sql():
 
         m_id, c_id, ctx_id = db.save_full_record(medida, condicion, ctx_extra)
 
-        # Verificar que se insertaron 3 registros (medida, condicion, contexto)
         assert mock_cursor.execute.call_count == 3
         assert m_id == 42
         assert c_id == 42
@@ -60,6 +59,6 @@ def test_fetch_recent_context_returns_rows():
     with patch("database._conn", return_value=mock_conn):
         rows = db.fetch_recent_context(1)
         assert len(rows) == 1
-        assert rows[0][1] == "Centro"  # zona
-        assert rows[0][4] == "Buena"   # quality_level
+        assert rows[0][1] == "Centro" 
+        assert rows[0][4] == "Buena"   
 

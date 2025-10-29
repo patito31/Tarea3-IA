@@ -1,8 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for
-# inference / acquisition
 from inference_engine import AirExpertEngine, Fact
 from acquisition_module import SensorInput, to_fact_dict
-# database helpers (normalizado)
 from database import (
     init_db,
     save_measurement,
@@ -26,11 +24,9 @@ def parse_float(v):
         return None
 
 
-# Inicializar motor y BDD
 engine = AirExpertEngine()
 init_db()
 
-# Rutas de CSV
 CSV_IN = Path("data/initial_data.csv")
 CSV_OUT = Path("data/history.csv")
 CSV_OUT_HEADERS = [
@@ -149,13 +145,10 @@ def export_history_to_csv(path: Path = CSV_OUT, limit: int = 1000) -> int:
             w.writerow(r)
     return len(rows)
 
-
-# Autocarga CSV inicial si la BD está vacía
 try:
     if not fetch_recent_context(1) and CSV_IN.exists():
         load_csv_to_db(CSV_IN)
 except Exception:
-    # Evita romper el arranque si falla la ingesta inicial
     pass
 
 
@@ -164,7 +157,6 @@ def index():
     result = None
 
     if request.method == "POST":
-        # Construir SensorInput desde distintos posibles nombres de campo
         data = SensorInput(
             PM2_5_24h=(parse_float(request.form.get("pm25"))
                        or parse_float(request.form.get("pm2_5"))
@@ -179,11 +171,9 @@ def index():
             rh=parse_float(request.form.get("rh")),
         )
 
-        # Evaluar con motor experto
         fact = Fact(**to_fact_dict(data))
         result = engine.evaluate(fact)
 
-        # Guardar todo en una sola llamada (medida + condición + contexto)
         zona = request.form.get("zona") or None
         evento = request.form.get("evento_biomasa")
         try:
@@ -196,7 +186,7 @@ def index():
             "pm10": data.PM10_24h,
             "no2": data.NO2_24h,
             "co": data.CO_24h,
-            "o": data.O3_8h,  # compatible, pero guardamos como 'o3' más abajo
+            "o": data.O3_8h,  
         }
         medida["o3"] = medida.pop("o", None)
         medida["so2"] = data.SO2_24h
@@ -215,12 +205,10 @@ def index():
 
         save_full_record(medida, condicion, contexto_extra)
 
-        # Guardar también en CSV de historial
         append_to_csv(medida, condicion, contexto_extra, result.label)
 
         return redirect(url_for("index"))
 
-    # Mostrar historial: contexto reciente (incluye join con medidas/condiciones)
     history = fetch_recent_context(10)
     return render_template("index.html", result=result, history=history)
 
