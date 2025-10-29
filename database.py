@@ -2,6 +2,7 @@ import sqlite3
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Dict, Iterable, Tuple
+from datetime import datetime
 
 _DB_PATH = Path("data/air_data.db")
 
@@ -130,6 +131,10 @@ def save_full_record(
     Returns a tuple (medida_id, condicion_id, contexto_id).
     """
     context_extra = context_extra or {}
+
+    if not context_extra.get('hora'):
+        context_extra['hora'] = datetime.now().isoformat(timespec='seconds')
+
     with _conn() as c:
         cur = c.cursor()
 

@@ -109,7 +109,6 @@ def load_csv_to_db(path: Path = CSV_IN) -> int:
             }
             contexto = {
                 "zona": (row.get("zona") or None),
-                "hora": (row.get("hora") or None),
                 "evento_biomasa": int(row.get("evento_biomasa") or 0),
                 "quality_level": res.label,
             }
@@ -198,13 +197,11 @@ def index():
         }
         contexto_extra = {
             "zona": zona,
-            "hora": None,
             "evento_biomasa": evento_val,
             "quality_level": result.label,
         }
 
         save_full_record(medida, condicion, contexto_extra)
-
         append_to_csv(medida, condicion, contexto_extra, result.label)
 
         return redirect(url_for("index"))
